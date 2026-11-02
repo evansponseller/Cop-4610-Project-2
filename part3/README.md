@@ -45,11 +45,20 @@ the syscalls
 make
 ```
 
-build the user programs with
+the provided test programs live in `tests/system-calls-test` and
+`tests/elevator-test`, and `make tests` from the repository root builds both
+
+## system call check
+
+with the elevator module unloaded, verify the syscalls with the provided
+`syscheck` module
 
 ```text
-cd tests
+cd tests/system-calls-test
 make
+sudo insmod syscheck.ko
+make run
+sudo rmmod syscheck
 ```
 
 ## runtime
@@ -70,7 +79,7 @@ sudo insmod elevator.ko
 the local pointer module only validates module loading and does not add syscall
 table entries
 
-the normal test sequence is
+the normal test sequence, run from `tests/elevator-test`, is
 
 ```text
 ./consumer --start
@@ -78,6 +87,9 @@ the normal test sequence is
 watch -n 1 cat /proc/elevator
 ./consumer --stop
 ```
+
+the provided producer picks floors 1 through 6, so requests involving floor 6
+are rejected with a return value of 1
 
 remove modules in reverse order
 
