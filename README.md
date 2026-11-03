@@ -6,19 +6,19 @@ This project consists of three parts: system-call tracing, a timer kernel module
 
 1. **Cody Cintron**
 2. **Jaime Flandes**
-3. **Evan Spoonseller**
+3. **Evan Sponseller**
 
 ## Division of Labor
 
 ### Part 1: System-Call Tracing
 
 - **Responsibilities**: Create the empty and `part1` C programs, add exactly five system calls to `part1`, and generate the `strace` output files.
-- **Assigned to**: Evan Spoonseller and Cody Cintron
+- **Assigned to**: Evan Sponseller and Cody Cintron
 
 ### Part 2: Timer Kernel Module
 
 - **Responsibilities**: Implement the `my_timer` kernel module using `ktime_get_real_ts64()`. Create and remove `/proc/timer` when the module is loaded and unloaded, and report the current time and elapsed time on each read.
-- **Assigned to**: Evan Spoonseller and Jaime Flandes
+- **Assigned to**: Evan Sponseller and Jaime Flandes
 
 ### Part 3a: Adding System Calls
 
@@ -28,12 +28,12 @@ This project consists of three parts: system-call tracing, a timer kernel module
 ### Part 3b: Kernel Compilation
 
 - **Responsibilities**: Configure, compile, and install the modified Linux 6.16.x kernel, then verify the installed kernel version.
-- **Assigned to**: Evan Spoonseller and Cody Cintron
+- **Assigned to**: Evan Sponseller and Cody Cintron
 
 ### Part 3c: Threads
 
 - **Responsibilities**: Implement and use a kernel thread (`kthread`) to control elevator movement and process pet requests.
-- **Assigned to**: Evan Spoonseller and Jaime Flandes
+- **Assigned to**: Evan Sponseller and Jaime Flandes
 
 ### Part 3d: Linked List
 
@@ -43,30 +43,34 @@ This project consists of three parts: system-call tracing, a timer kernel module
 ### Part 3e: Mutexes
 
 - **Responsibilities**: Use a mutex to protect shared data accessed by floor and elevator operations.
-- **Assigned to**: Evan Spoonseller and Cody Cintron
+- **Assigned to**: Evan Sponseller and Cody Cintron
 
 ### Part 3f: Scheduling Algorithm
 
 - **Responsibilities**: Implement the elevator scheduling algorithm, including pet loading and unloading, floor movement, capacity and weight limits, and shutdown behavior.
-- **Assigned to**: Evan Spoonseller and Jaime Flandes
+- **Assigned to**: Evan Sponseller and Jaime Flandes
 
 ## File Listing
 
 The following is an expected project layout based on the assignment requirements. Update it if the starter code or your final implementation uses different filenames or directories.
 
 ```text
-project2/
+shell/
 ├── part1/
+│   ├── Makefile
 │   ├── empty.c
 │   ├── empty.trace
 │   ├── part1.c
 │   └── part1.trace
 │
 ├── part2/
-│   ├── my_timer.c
+│   ├── src/
+│   │   └── my_timer.c
 │   └── Makefile
 │
 ├── part3/
+│   ├── src/
+│   │   ├── syscalls.c
 │   ├── tests/
 │   │   └── test_syscalls.c
 │   ├── syscalls/
@@ -76,7 +80,8 @@ project2/
 │   ├── producer.c
 │   ├── consumer.c
 │   └── Makefile
-│
+├── .gitignore
+├── Makefile
 └── README.md
 ```
 
@@ -173,7 +178,7 @@ sudo rmmod elevator
 | --- | --- |
 | YYYY-MM-DD | Record work completed on Part 2, Part 3a, Part 3c, Part 3d, and Part 3f as applicable. |
 
-### Evan Spoonseller
+### Evan Sponseller
 
 | Date | Work Completed / Notes |
 | --- | --- |
