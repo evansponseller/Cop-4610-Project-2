@@ -1,3 +1,4 @@
+
 # Cop-4610-Project-2
 
 This project consists of three parts: system-call tracing, a timer kernel module, and a pet elevator kernel module. The work involves tracing system calls with `strace`, implementing kernel modules and proc entries, adding system calls to the Linux kernel, and testing the elevator with the provided user-space programs.
@@ -52,10 +53,14 @@ This project consists of three parts: system-call tracing, a timer kernel module
 
 ## File Listing
 
-The following is an expected project layout based on the assignment requirements. Update it if the starter code or your final implementation uses different filenames or directories.
+The repository is organized as follows:
 
 ```text
-shell/
+Cop-4610-Project-2-main/
+├── .gitignore
+├── Makefile
+├── README.md
+│
 ├── part1/
 │   ├── Makefile
 │   ├── empty.c
@@ -64,128 +69,236 @@ shell/
 │   └── part1.trace
 │
 ├── part2/
-│   ├── src/
-│   │   └── my_timer.c
-│   └── Makefile
+│   ├── Makefile
+│   └── src/
+│       └── my_timer.c
 │
-├── part3/
-│   ├── src/
-│   │   ├── syscalls.c
-│   ├── tests/
-│   │   └── test_syscalls.c
-│   ├── syscalls/
-│   │   ├── syscalls.c
-│   │   └── Makefile
-│   ├── elevator.c
-│   ├── producer.c
-│   ├── consumer.c
-│   └── Makefile
-├── .gitignore
-├── Makefile
-└── README.md
+└── part3/
+    ├── Makefile
+    ├── README.md
+    ├── syscalls.c
+    ├── src/
+    │   ├── elevator.c
+    │   └── local_stubs.c
+    └── tests/
+        ├── elevator-test/
+        │   ├── Makefile
+        │   ├── README.md
+        │   ├── consumer.c
+        │   ├── producer.c
+        │   └── wrappers.h
+        └── system-calls-test/
+            ├── Makefile
+            ├── README.md
+            ├── syscheck.c
+            ├── test-syscalls.c
+            └── test-syscalls.h
 ```
 
-The modified Linux kernel source tree also contains the system-call changes listed in the **Adding System Calls** section. It may be maintained separately from this project directory.
+The Linux kernel source tree modified for Part 3 is maintained separately from this repository. The `part3/syscalls.c` file is copied into that kernel tree as part of the system-call integration process. See `part3/README.md` for the required kernel changes.
 
 ## How to Compile and Run
 
 ### Requirements
 
-- **Compiler**: GCC
-- **Build System**: Make
-- **Tracing utility**: `strace`
-- **Kernel tools**: Linux kernel headers/source, kernel build tools, and permission to load kernel modules
-- **Environment**: A compatible Linux system running the modified kernel for Part 3
+- A Linux environment with GCC and GNU Make.
+- `strace` for Part 1.
+- Linux kernel headers/build files matching the kernel you are building modules for (normally available under `/lib/modules/$(uname -r)/build`).
+- Root privileges (`sudo`) to load and unload kernel modules.
+- For the full Part 3 system-call functionality, the separately modified Linux kernel must be compiled, installed, and booted.
 
-### Part 1: Compile and Trace
+Run the commands below from the repository's root directory unless another directory is specified.
 
-From the Part 1 directory, run:
+### Part 1: System-Call Tracing
+
+Build both programs:
 
 ```bash
-gcc -o empty empty.c
+make -C part1
+```
+
+Run each program under `strace` and save its trace output:
+
+```bash
+cd part1
 strace -o empty.trace ./empty
-gcc -o part1 part1.c
 strace -o part1.trace ./part1
+cd ..
 ```
 
-### Part 2: Build and Run the Timer Module
-
-From the directory containing the timer module's Makefile, build it:
+Alternatively, regenerate both trace files through the Part 1 Makefile:
 
 ```bash
-make
+make -C part1 trace
 ```
 
-Load and inspect it:
+### Part 2: Timer Kernel Module
+
+Build the timer module against the currently running kernel:
 
 ```bash
-sudo insmod my_timer.ko
+make -C part2
+```
+
+Load the module and read its proc entry:
+
+```bash
+sudo insmod part2/my_timer.ko
 cat /proc/timer
 ```
 
-Remove it when finished:
+When finished, unload the module:
 
 ```bash
 sudo rmmod my_timer
 ```
 
-### Part 3: Build and Run the Elevator
-
-First boot into the modified kernel and verify it with `uname -r`. Build the system-call test and elevator components using the Makefiles provided with the project.
-
-Test the system calls:
+To remove generated build files:
 
 ```bash
-cd part3/tests
-make
-sudo insmod syscalls.ko
-./test_syscalls
+make -C part2 clean
 ```
 
-Load the elevator module and start the elevator using the provided consumer program:
+### Part 3: Elevator Kernel Module and System Calls
+
+**Important:** Part 3 depends on kernel integration work outside this repository.
+
+The three system calls (`start_elevator`, `issue_request`, and `stop_elevator`) must first be added to the Linux kernel source, and that modified kernel must be built, installed, and booted. The exact kernel integration steps and syscall numbers are documented in `part3/README.md`.
+
+Confirm that the modified kernel is running:
 
 ```bash
-sudo insmod elevator.ko
+uname -r
+```
+
+The module Makefile builds against the kernel currently running on the machine.
+
+On the modified kernel, build the elevator module without the local stub module:
+
+```bash
+make -C part3 LOCAL_STUBS=0
+```
+
+On a stock kernel, the default build includes `local_stubs.ko`. Those stubs allow the elevator module to load for module-level testing, but they do not add the system calls to the kernel and do not provide the full syscall functionality:
+
+```bash
+make -C part3
+```
+
+#### Build the User-Space Test Programs
+
+Build the elevator producer and consumer programs:
+
+```bash
+make -C part3/tests/elevator-test
+```
+
+Build the system-call test program:
+
+```bash
+cd part3/tests/system-calls-test
+gcc test-syscalls.c -o test-syscalls
+cd ../../..
+```
+
+#### Check the System Calls (Modified Kernel)
+
+With the modified kernel booted and the elevator module unloaded, build and load the `syscheck` module. Then run the system-call test program:
+
+```bash
+cd part3/tests/system-calls-test
+make syscheck.ko
+sudo insmod syscheck.ko
+./test-syscalls
+sudo rmmod syscheck
+cd ../../..
+```
+
+The `syscheck` module supplies temporary stub implementations so the system calls can be invoked for this check. It is a test helper, not the elevator implementation.
+
+#### Run the Elevator
+
+On the modified kernel, load the elevator module:
+
+```bash
+sudo insmod part3/elevator.ko
+```
+
+On a stock kernel used only for module-loading tests, load the local stubs first, followed by the elevator module:
+
+```bash
+sudo insmod part3/local_stubs.ko
+sudo insmod part3/elevator.ko
+```
+
+Start the elevator, submit ten requests, and monitor its status:
+
+```bash
+cd part3/tests/elevator-test
 ./consumer --start
-```
-
-Create pet requests and monitor the proc entry:
-
-```bash
-./producer [number_of_pets]
+./producer 10
 watch -n 1 cat /proc/elevator
 ```
 
-Stop the elevator and unload the module after it has finished servicing pets:
+When the elevator has finished servicing requests, stop it:
 
 ```bash
 ./consumer --stop
+cd ../../..
+```
+
+Unload modules in reverse order.
+
+On the modified kernel:
+
+```bash
 sudo rmmod elevator
 ```
 
-## Development Log
+If using the stock-kernel stub setup, unload both modules:
 
+```bash
+sudo rmmod elevator
+sudo rmmod local_stubs
+```
+
+The producer selects floors 1 through 6. The elevator implementation may reject requests involving floor 6; consult `part3/README.md` for this implementation-specific behavior.
+
+To clean generated files, run:
+
+```bash
+make clean
+```
+
+## Development Log
+Each member's primary contributions are recorded below.
 
 ### Cody Cintron
 
 | Date | Work Completed / Notes |
 | --- | --- |
-| YYYY-MM-DD | Record work completed on Part 1, Part 3a, Part 3b, Part 3d, and Part 3e as applicable. |
+| 2026-10-28 | Completed Part 2 and started on Part 3a, 3b, 3d, and 3e. |
+| 2026-10-29 | Completed Part 3a, 3b, 3d, and 3e.  |
+| 2026-11-02 | Ran testing and did bug-fixing. |
 
 ### Jaime Flandes
 
 | Date | Work Completed / Notes |
 | --- | --- |
-| YYYY-MM-DD | Record work completed on Part 2, Part 3a, Part 3c, Part 3d, and Part 3f as applicable. |
+| 2026-10-28 | Assisted completing Part 2 |
+| 2026-10-29 | Assisted completing Part 3a, 3c, 3d, and 3f. |
+| 2026-11-02 | Finished writing the README.md |
 
 ### Evan Sponseller
 
 | Date | Work Completed / Notes |
 | --- | --- |
-| YYYY-MM-DD | Record work completed on Part 1, Part 2, Part 3b, Part 3c, Part 3e, and Part 3f as applicable. |
+| 2026-10-28 | Completed Part 1 while making the GitHub Repository for everyone else to work on. |
+| 2026-10-29 | Assisted completing Part 3b, 3e, 3c, and 3f. |
+| 2026-11-02 | Ran testing and did bug-fixing. |
 
 ## Meetings
 
 | Date | Attendees | Topics Discussed | Outcomes / Decisions |
 | --- | --- | --- | --- |
-| YYYY-MM-DD | Cody, Jaime, Evan | Discussed task assignments, project requirements, and implementation plans for system-call tracing, the timer module, and the elevator. | Confirmed the division of labor and identified the next development tasks. |
+| 2026-10-13 | Cody, Jaime, Evan | Discussed task assignments, project requirements, and implementation plans for system-call tracing, the timer module, and the elevator. | Confirmed the division of labor and identified the next development tasks each person would do from home. |
